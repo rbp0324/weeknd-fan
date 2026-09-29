@@ -118,15 +118,25 @@ test('opens a compact mobile overlay without moving the page', async ({
 test('centers the scaled mobile wordmark and aligns the two-bar menu icon', async ({
   page,
 }) => {
-  const viewport = { width: 468, height: 780 };
+  const viewport = { width: 393, height: 852 };
   await page.setViewportSize(viewport);
   await page.goto('/');
 
-  const [headerBox, wordmarkBox, iconBox] = await Promise.all([
-    page.locator('.site-header').boundingBox(),
-    page.locator('.site-header__wordmark').boundingBox(),
-    page.locator('.site-header__menu-icon').boundingBox(),
-  ]);
+  const edition = page.locator('.site-header__edition');
+  const [headerBox, wordmarkBox, iconBox, editionLineCount] = await Promise.all(
+    [
+      page.locator('.site-header').boundingBox(),
+      page.locator('.site-header__wordmark').boundingBox(),
+      page.locator('.site-header__menu-icon').boundingBox(),
+      edition.evaluate((element) => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        return new Set(
+          Array.from(range.getClientRects(), (rect) => Math.round(rect.top)),
+        ).size;
+      }),
+    ],
+  );
 
   expect(headerBox).not.toBeNull();
   expect(wordmarkBox).not.toBeNull();
@@ -141,6 +151,7 @@ test('centers the scaled mobile wordmark and aligns the two-bar menu icon', asyn
   expect(wordmarkBox?.width).toBeLessThanOrEqual(105);
   expect(wordmarkBox?.height).toBeGreaterThanOrEqual(20);
   expect(wordmarkBox?.height).toBeLessThanOrEqual(23);
+  expect(editionLineCount).toBe(1);
   expect(iconBox?.width).toBeCloseTo(22, 0);
   expect(iconBox?.height).toBeCloseTo(14, 0);
   expect(Math.abs(iconCenter - headerCenter)).toBeLessThanOrEqual(0.5);
